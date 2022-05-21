@@ -44,9 +44,7 @@ class _CameraViewState extends State<CameraView> {
 
   void _enableFlashLight() async {
     isEnabledFlashLight =  await _joyveeCamera.enableFlashLight();
-    setState(() {
-
-    });
+    setState(() {});
   }
 
   void _disableFlashLight() async {
@@ -64,10 +62,7 @@ class _CameraViewState extends State<CameraView> {
           children:[
             Positioned.fill(
               child: Center(
-                child: AspectRatio(
-                  aspectRatio: 9 / 16,
-                  child: _joyveeCamera.bulidPreview(context),
-                ),
+                child: _joyveeCamera.bulidPreview(context),
               )
             ),
             (!isEnabledFlashLight!)
