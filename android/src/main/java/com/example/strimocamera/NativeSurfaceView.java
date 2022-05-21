@@ -102,7 +102,9 @@ public class NativeSurfaceView implements PlatformView, SurfaceHolder.Callback, 
     }
 
     @Override
-    public void dispose() {}
+    public void dispose() {
+        rtmpCamera1.stopStream();
+    }
 
     @Override
     public void surfaceCreated(SurfaceHolder surfaceHolder) {}
