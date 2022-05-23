@@ -56,6 +56,7 @@ import com.pedro.encoder.input.gl.render.filters.object.GifObjectFilterRender;
 import com.pedro.encoder.input.gl.render.filters.object.ImageObjectFilterRender;
 import com.pedro.encoder.input.gl.render.filters.object.SurfaceFilterRender;
 import com.pedro.encoder.input.gl.render.filters.object.TextObjectFilterRender;
+import com.pedro.encoder.input.video.CameraHelper;
 import com.pedro.encoder.input.video.CameraOpenException;
 import com.pedro.encoder.utils.gl.TranslateTo;
 import com.pedro.rtmp.utils.ConnectCheckerRtmp;
@@ -103,7 +104,8 @@ public class NativeSurfaceView implements PlatformView, SurfaceHolder.Callback, 
 
     @Override
     public void dispose() {
-        rtmpCamera1.stopStream();
+        rtmpCamera1.pauseRecord();
+        openGlView.surfaceDestroyed(openGlView.getHolder());
     }
 
     @Override
@@ -119,7 +121,6 @@ public class NativeSurfaceView implements PlatformView, SurfaceHolder.Callback, 
         textObjectFilterRender.setDefaultScale(1920,
                1080);
         textObjectFilterRender.setPosition(TranslateTo.TOP_RIGHT);
-        rtmpCamera1.setReTries(10);
         rtmpCamera1.startPreview(1920, 1080);
         Log.i("STRIMOCAMERA", "SurfaceViewCreated ASUSUSUSUS");
     }
@@ -129,10 +130,9 @@ public class NativeSurfaceView implements PlatformView, SurfaceHolder.Callback, 
     }
 
     public void startStream(String url) {
-        rtmpCamera1.prepareAudio();
-        rtmpCamera1.prepareVideo(1920, 1080, 5000);
-        rtmpCamera1.startStream(url);
-        rtmpCamera1.getGlInterface().setRotation(0);
+            rtmpCamera1.prepareVideo(1920, 1080, 5000);
+            rtmpCamera1.startStream(url);
+            rtmpCamera1.getGlInterface().setRotation(0);
     }
 
     public void stopStream() {
@@ -148,7 +148,12 @@ public class NativeSurfaceView implements PlatformView, SurfaceHolder.Callback, 
     }
 
     @Override
-    public void surfaceDestroyed(SurfaceHolder surfaceHolder) {}
+    public void surfaceDestroyed(SurfaceHolder surfaceHolder) {
+        if (rtmpCamera1.isStreaming()) {
+            rtmpCamera1.stopStream();
+        }
+        rtmpCamera1.stopPreview();
+    }
 
     @Override
     public void onConnectionStartedRtmp(String rtmpUrl) {

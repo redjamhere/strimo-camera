@@ -28,8 +28,9 @@ class CameraView extends StatefulWidget {
   State<CameraView> createState() => _CameraViewState();
 }
 
-class _CameraViewState extends State<CameraView> {
+class _CameraViewState extends State<CameraView> with AutomaticKeepAliveClientMixin {
   final JoyveeCamera _joyveeCamera = JoyveeCamera();
+  bool keepAlive = false;
   Size? size;
 
   bool? isStreaming;
@@ -52,6 +53,15 @@ class _CameraViewState extends State<CameraView> {
     setState(() {
       isEnabledFlashLight = false;
     });
+  }
+
+  @override
+  bool get wantKeepAlive => keepAlive;
+
+  void _startStream() async {
+    keepAlive = true;
+    updateKeepAlive();
+    await _joyveeCamera.startStream("rtmp://192.168.1.103:1935/live/android");
   }
 
   @override
@@ -95,7 +105,7 @@ class _CameraViewState extends State<CameraView> {
                 right: 0,
                 child: TextButton(
                   child: Text('start', style: TextStyle(color: Colors.red),),
-                  onPressed: () async => await _joyveeCamera.startStream("rtmp://192.168.1.101:1935/live/android"),
+                  onPressed: ()  => _startStream(),
                 )),
             Positioned(
                 bottom: 0,
