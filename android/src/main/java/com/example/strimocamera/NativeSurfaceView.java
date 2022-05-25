@@ -1,8 +1,12 @@
 package com.example.strimocamera;
 
+import android.app.Activity;
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.PointF;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
@@ -66,25 +70,37 @@ import com.pedro.rtplibrary.view.AspectRatioMode;
 import com.pedro.rtplibrary.view.OpenGlView;
 
 import io.flutter.Log;
+import io.flutter.embedding.android.FlutterActivity;
 import io.flutter.embedding.android.FlutterSurfaceView;
 import io.flutter.plugin.platform.PlatformView;
 import java.util.Map;
 
-public class NativeSurfaceView implements PlatformView, SurfaceHolder.Callback, ConnectCheckerRtmp{
-    @NonNull private final FlutterSurfaceView surfaceView;
+public class NativeSurfaceView extends FlutterActivity implements PlatformView, SurfaceHolder.Callback, ConnectCheckerRtmp{
+    private FlutterSurfaceView surfaceView;
     private RtmpCamera1 rtmpCamera1;
     private OpenGlView openGlView;
     private RtmpCamera2 rtmpCamera2;
     private TextView waterMark;
+    private DartMessenger dartMessenger;
 
-    NativeSurfaceView (@NonNull Context context, int id, @NonNull Map<String, Object> creationParams) {
+    public NativeSurfaceView (@NonNull Context context, int id, @NonNull Map<String, Object> creationParams, DartMessenger dartMessenger) {
+        this.dartMessenger = dartMessenger;
         surfaceView = new FlutterSurfaceView(context);
         openGlView = new OpenGlView(surfaceView.getContext());
-        openGlView.setAspectRatioMode(AspectRatioMode.Fill);
+
+        rtmpCamera1 = new RtmpCamera1(openGlView, this);
         openGlView.getHolder().addCallback(this);
+
         waterMark = new TextView(context);
         waterMark.setText("Joyvee Camera");
         waterMark.setTextColor(Color.LTGRAY);
+
+        TextObjectFilterRender textObjectFilterRender = new TextObjectFilterRender();
+        rtmpCamera1.getGlInterface().setFilter(textObjectFilterRender);
+        textObjectFilterRender.setText("Joyvee Camera", 70, Color.LTGRAY);
+        textObjectFilterRender.setDefaultScale(1920,
+                1080);
+        textObjectFilterRender.setPosition(TranslateTo.TOP_RIGHT);
 //        surfaceCreated(surfaceView.getHolder());
 //        openGlView = new OpenGlView(surfaceView.getContext());
 //        rtmpCamera1 = new RtmpCamera1(openGlView, this);
@@ -94,6 +110,12 @@ public class NativeSurfaceView implements PlatformView, SurfaceHolder.Callback, 
 //        textView.setTextSize(72);
 //        textView.setBackgroundColor(Color.rgb(255, 255, 255));
 //        textView.setText("Rendered on a natiov Android view (id: " + id + ")");
+    }
+
+
+    @Override
+    protected void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
     }
 
     @NonNull
@@ -106,6 +128,7 @@ public class NativeSurfaceView implements PlatformView, SurfaceHolder.Callback, 
     public void dispose() {
         rtmpCamera1.pauseRecord();
         openGlView.surfaceDestroyed(openGlView.getHolder());
+        dartMessenger.send(DartMessenger.EventType.RTMP_DISCONNECTED, "");
     }
 
     @Override
@@ -113,16 +136,7 @@ public class NativeSurfaceView implements PlatformView, SurfaceHolder.Callback, 
 
     @Override
     public void surfaceChanged(SurfaceHolder surfaceHolder, int i, int i1, int i2) {
-        rtmpCamera1 = new RtmpCamera1(openGlView, this);
-
-        TextObjectFilterRender textObjectFilterRender = new TextObjectFilterRender();
-        rtmpCamera1.getGlInterface().setFilter(textObjectFilterRender);
-        textObjectFilterRender.setText("Joyvee Camera", 70, Color.LTGRAY);
-        textObjectFilterRender.setDefaultScale(1920,
-               1080);
-        textObjectFilterRender.setPosition(TranslateTo.TOP_RIGHT);
         rtmpCamera1.startPreview(1920, 1080);
-        Log.i("STRIMOCAMERA", "SurfaceViewCreated ASUSUSUSUS");
     }
 
     public void switchCamera() {
@@ -130,9 +144,8 @@ public class NativeSurfaceView implements PlatformView, SurfaceHolder.Callback, 
     }
 
     public void startStream(String url) {
-            rtmpCamera1.prepareVideo(1920, 1080, 5000);
-            rtmpCamera1.startStream(url);
-            rtmpCamera1.getGlInterface().setRotation(0);
+        rtmpCamera1.prepareVideo(1920, 1080, 5000);
+        rtmpCamera1.startStream(url);
     }
 
     public void stopStream() {
@@ -157,19 +170,54 @@ public class NativeSurfaceView implements PlatformView, SurfaceHolder.Callback, 
 
     @Override
     public void onConnectionStartedRtmp(String rtmpUrl) {
+        runOnUiThread(
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        dartMessenger.send(DartMessenger.EventType.RTMP_CONNECTING, "");
+                    }
+                }
+        );
     }
 
     @Override
-    public void onConnectionSuccessRtmp() {}
+    public void onConnectionSuccessRtmp() {
+        runOnUiThread(
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        dartMessenger.send(DartMessenger.EventType.RTMP_CONNECTED, "");
+                    }
+                }
+        );
+    }
 
     @Override
-    public void onConnectionFailedRtmp(final String reason) {}
+    public void onConnectionFailedRtmp(final String reason) {
+        runOnUiThread(
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        dartMessenger.send(DartMessenger.EventType.RTMP_CONNECTION_FAILED, "");
+                    }
+                }
+        );
+    }
 
     @Override
     public void onNewBitrateRtmp(long bitrate) {}
 
     @Override
-    public void onDisconnectRtmp() {}
+    public void onDisconnectRtmp() {
+        runOnUiThread(
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        dartMessenger.send(DartMessenger.EventType.RTMP_DISCONNECTED, "");
+                    }
+                }
+        );
+    }
 
     @Override
     public void onAuthErrorRtmp() {}

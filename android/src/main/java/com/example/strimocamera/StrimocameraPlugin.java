@@ -4,9 +4,12 @@ import android.app.Activity;
 import android.content.Context;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CaptureRequest;
+import android.media.metrics.Event;
 import android.opengl.GLES20;
 import android.opengl.GLUtils;
 import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -27,6 +30,7 @@ import io.flutter.embedding.engine.plugins.FlutterPlugin;
 import io.flutter.embedding.engine.plugins.activity.ActivityAware;
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
+import io.flutter.plugin.common.EventChannel;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
@@ -53,36 +57,36 @@ import javax.microedition.khronos.egl.EGLSurface;
 
 /** StrimocameraPlugin */
 @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
-public class StrimocameraPlugin implements FlutterPlugin, MethodCallHandler {
+public class StrimocameraPlugin implements FlutterPlugin, MethodCallHandler{
   /// The MethodChannel that will the communication between Flutter and native Android
   ///
   /// This local reference serves to register the plugin with the Flutter Engine and unregister it
   /// when the Flutter Engine is detached from the Activity
   private MethodChannel channel;
+  private EventChannel eventChannel;
+  private EventChannel.EventSink eventSink;
   private NativeSurfaceViewFactory nativeSurfaceViewFactory;
   private FlutterPluginBinding binding;
+  private DartMessenger dartMessenger;
+
+
   @Override
   public void onAttachedToEngine(@NonNull FlutterPluginBinding flutterPluginBinding) {
-    nativeSurfaceViewFactory= new NativeSurfaceViewFactory();
+    dartMessenger = new DartMessenger(flutterPluginBinding.getBinaryMessenger(), "strimocamera_event_channel");
+    nativeSurfaceViewFactory= new NativeSurfaceViewFactory(dartMessenger);
+    channel = new MethodChannel(flutterPluginBinding.getBinaryMessenger(), "strimocamera");
+    channel.setMethodCallHandler(this);
     flutterPluginBinding
             .getPlatformViewRegistry()
             .registerViewFactory("<platform-view-type>", nativeSurfaceViewFactory);
-    channel = new MethodChannel(flutterPluginBinding.getBinaryMessenger(), "strimocamera");
-    channel.setMethodCallHandler(this);
     this.binding = flutterPluginBinding;
   }
 
   @Override
   public void onMethodCall(@NonNull MethodCall call, @NonNull Result result){
-    if (call.method.equals("getPlatformVersion")) {
-      result.success("Android " + android.os.Build.VERSION.RELEASE);
+    if (call.method.equals("callEvent")) {
     } else if(call.method.equals("startStream")) {
-      try {
-        nativeSurfaceViewFactory.startStream(call.argument("url"));
-        result.success(true);
-      } catch (Exception e) {
-        result.success(false);
-      }
+      nativeSurfaceViewFactory.startStream(call.argument("url"));
     } else if (call.method.equals("switchCamera")) {
       nativeSurfaceViewFactory.switchCamera();
     } else if (call.method.equals("stopStream")) {

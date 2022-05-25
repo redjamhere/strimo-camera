@@ -66,6 +66,7 @@ class _CameraViewState extends State<CameraView> with AutomaticKeepAliveClientMi
 
   @override
   Widget build(BuildContext context) {
+
     size = MediaQuery.of(context).size;
     return Scaffold(
       body: Stack(
@@ -90,6 +91,50 @@ class _CameraViewState extends State<CameraView> with AutomaticKeepAliveClientMi
               child: IconButton(
                 icon: Icon(Icons.flashlight_off),
                 onPressed: _disableFlashLight
+              ),
+            ),
+            Positioned(
+              top: 30,
+              left: 50,
+              child: IconButton(
+                icon: Icon(Icons.call),
+                onPressed: () async => await _joyveeCamera.callEvent(),
+              ),
+            ),
+            Positioned(
+              top: 0,
+              left: 0,
+              bottom: 0,
+              right: 0,
+              child: Center(
+                child: StreamBuilder<StreamStatus>(
+                  initialData: StreamStatus.rtmp_disconnected,
+                  stream: _joyveeCamera.eventStream,
+                  builder: (context, snapshot) {
+                    final StreamStatus streamStatus = snapshot.data ?? StreamStatus.unknow;
+                    String _message = "";
+                    Color? _color;
+                    if (streamStatus == StreamStatus.rtmp_connected) {
+                      _message = 'Connected';
+                      _color = Colors.green;
+                    }
+
+                    if (streamStatus == StreamStatus.rtmp_connecting) {
+                      _message = 'Connecting....';
+                      _color = Colors.grey;
+                    }
+
+                    if (streamStatus == StreamStatus.rtmp_disconnected) {
+                      _message = 'Disconnected';
+                      _color = Colors.red;
+                    }
+                    if (streamStatus == StreamStatus.rtmp_connection_failed) {
+                      _message = "Connection failed";
+                      _color = Colors.orange;
+                    }
+                    return Text(_message, style: TextStyle(color: _color, fontWeight: FontWeight.bold, fontSize: 40),);
+                  },
+                ),
               ),
             ),
             Positioned(

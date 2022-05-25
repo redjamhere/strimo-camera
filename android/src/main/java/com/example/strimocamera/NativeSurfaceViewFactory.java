@@ -6,6 +6,8 @@ import androidx.annotation.NonNull;
 
 import com.example.strimocamera.NativeSurfaceView;
 
+import org.jetbrains.annotations.NotNull;
+
 import io.flutter.Log;
 import io.flutter.plugin.common.StandardMessageCodec;
 import io.flutter.plugin.platform.PlatformView;
@@ -15,16 +17,18 @@ import java.util.Map;
 class NativeSurfaceViewFactory extends PlatformViewFactory {
 
     private NativeSurfaceView view;
+    private DartMessenger dartMessenger;
 
-    NativeSurfaceViewFactory() {
+    public NativeSurfaceViewFactory(DartMessenger dartMessenger) {
         super(StandardMessageCodec.INSTANCE);
+        this.dartMessenger = dartMessenger;
     }
 
     @NonNull
     @Override
     public PlatformView create(@NonNull Context context, int id, @NonNull Object args) {
         final Map<String, Object> creationParams = (Map<String, Object>) args;
-        view = new NativeSurfaceView(context, id, creationParams);
+        view = new NativeSurfaceView(context, id, creationParams, dartMessenger);
         return view;
     }
 
