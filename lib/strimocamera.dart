@@ -60,9 +60,6 @@ class JoyveeCamera {
 
   Stream<StreamStatus> get eventStream async* {
     await for (String message in _eventChannel.receiveBroadcastStream().map((message) => message)){
-      if (message == "rtmp_connection_failed") {
-        // await stopStream();
-      }
       print(message);
       yield strToStreamStatus(message);
     }
