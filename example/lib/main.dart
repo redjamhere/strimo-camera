@@ -29,6 +29,7 @@ class CameraView extends StatefulWidget {
 }
 
 class _CameraViewState extends State<CameraView> {
+  AppLifecycleState? _notification;
   final JoyveeCamera _joyveeCamera = JoyveeCamera();
   bool keepAlive = false;
   Size? size;
@@ -43,10 +44,16 @@ class _CameraViewState extends State<CameraView> {
     super.initState();
     isStreaming = false;
     isEnabledFlashLight = false;
+    _buildPreview();
   }
   void _enableFlashLight() async {
     isEnabledFlashLight =  await _joyveeCamera.enableFlashLight();
     setState(() {});
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
   }
 
   void _disableFlashLight() async {
@@ -60,8 +67,10 @@ class _CameraViewState extends State<CameraView> {
     await _joyveeCamera.startStream("rtmp://192.168.1.103:1935/live/android");
   }
 
+
+
   _buildPreview() async {
-    dynamic p = await _joyveeCamera.bulidPreview(context);
+    dynamic p = await _joyveeCamera.buildPreview(context);
     if(p == false) {
       preview = Center(child: Text('Camera is not allowed'));
     } else {
@@ -73,7 +82,6 @@ class _CameraViewState extends State<CameraView> {
   @override
   Widget build(BuildContext context) {
     size = MediaQuery.of(context).size;
-    _buildPreview();
     return Scaffold(
       body: Stack(
           children:[
