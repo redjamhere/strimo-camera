@@ -1,10 +1,11 @@
 
 import 'dart:async';
+import 'dart:ffi';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:strimocamera/NativeSurfaceView.dart';
-import 'package:torch_light/torch_light.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 
 enum StreamStatus {
@@ -34,8 +35,19 @@ class JoyveeCamera {
     await _channel.invokeMethod('callEvent');
   }
 
-  Widget bulidPreview (BuildContext context) {
-    return preview(context);
+
+  Future<dynamic> bulidPreview (BuildContext context) async {
+   PermissionStatus _cp  = await Permission.camera.status;
+   if (!_cp.isGranted) {
+     if(await Permission.camera.request().isGranted) {
+       return preview(context);
+     } else {
+       return false;
+     }
+   } else {
+     return preview(context);
+     // return preview(context);
+   }
   }
 
   Future<void> switchCamera() async {

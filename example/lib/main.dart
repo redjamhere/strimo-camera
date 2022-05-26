@@ -28,7 +28,7 @@ class CameraView extends StatefulWidget {
   State<CameraView> createState() => _CameraViewState();
 }
 
-class _CameraViewState extends State<CameraView> with AutomaticKeepAliveClientMixin {
+class _CameraViewState extends State<CameraView> {
   final JoyveeCamera _joyveeCamera = JoyveeCamera();
   bool keepAlive = false;
   Size? size;
@@ -36,13 +36,14 @@ class _CameraViewState extends State<CameraView> with AutomaticKeepAliveClientMi
   bool? isStreaming;
   bool? isEnabledFlashLight;
 
+  Widget? preview;
+
   @override
   void initState() {
     super.initState();
     isStreaming = false;
     isEnabledFlashLight = false;
   }
-
   void _enableFlashLight() async {
     isEnabledFlashLight =  await _joyveeCamera.enableFlashLight();
     setState(() {});
@@ -55,25 +56,30 @@ class _CameraViewState extends State<CameraView> with AutomaticKeepAliveClientMi
     });
   }
 
-  @override
-  bool get wantKeepAlive => keepAlive;
-
   void _startStream() async {
-    keepAlive = true;
-    updateKeepAlive();
     await _joyveeCamera.startStream("rtmp://192.168.1.103:1935/live/android");
+  }
+
+  _buildPreview() async {
+    dynamic p = await _joyveeCamera.bulidPreview(context);
+    if(p == false) {
+      preview = Center(child: Text('Camera is not allowed'));
+    } else {
+      preview = p;
+    }
+    setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
-
     size = MediaQuery.of(context).size;
+    _buildPreview();
     return Scaffold(
       body: Stack(
           children:[
             Positioned.fill(
               child: Center(
-                child: _joyveeCamera.bulidPreview(context),
+                child: preview,
               )
             ),
             (!isEnabledFlashLight!)
