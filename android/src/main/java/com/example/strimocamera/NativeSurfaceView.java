@@ -144,6 +144,7 @@ public class NativeSurfaceView extends FlutterActivity implements PlatformView, 
     }
 
     public void startStream(String url) {
+        rtmpCamera1.prepareAudio();
         rtmpCamera1.prepareVideo(1920, 1080, 5000);
         rtmpCamera1.startStream(url);
     }
