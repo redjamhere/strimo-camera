@@ -199,6 +199,7 @@ public class NativeSurfaceView extends FlutterActivity implements PlatformView, 
                     @Override
                     public void run() {
                         dartMessenger.send(DartMessenger.EventType.RTMP_CONNECTION_FAILED, "");
+                        rtmpCamera1.stopStream();
                     }
                 }
         );

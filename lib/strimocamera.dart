@@ -13,7 +13,7 @@ enum StreamStatus {
   rtmp_connected,
   rtmp_connecting,
   rtmp_connection_failed,
-  unknow
+  initial
 }
 
 class JoyveeCamera {
@@ -60,7 +60,6 @@ class JoyveeCamera {
 
   Stream<StreamStatus> get eventStream async* {
     await for (String message in _eventChannel.receiveBroadcastStream().map((message) => message)){
-      print(message);
       yield strToStreamStatus(message);
     }
   }
@@ -68,7 +67,7 @@ class JoyveeCamera {
 }
 
 StreamStatus strToStreamStatus(String s) {
-  StreamStatus _status = StreamStatus.unknow;
+  StreamStatus _status = StreamStatus.initial;
   switch (s) {
     case "error":
       _status = StreamStatus.error;

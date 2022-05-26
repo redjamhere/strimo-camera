@@ -108,12 +108,12 @@ class _CameraViewState extends State<CameraView> with AutomaticKeepAliveClientMi
               right: 0,
               child: Center(
                 child: StreamBuilder<StreamStatus>(
-                  initialData: StreamStatus.rtmp_disconnected,
+                  initialData: StreamStatus.initial,
                   stream: _joyveeCamera.eventStream,
                   builder: (context, snapshot) {
-                    final StreamStatus streamStatus = snapshot.data ?? StreamStatus.unknow;
-                    String _message = "";
-                    Color? _color;
+                    final StreamStatus streamStatus = snapshot.data ?? StreamStatus.initial;
+                    String _message = "> _ < ";
+                    Color? _color = Colors.white;
                     if (streamStatus == StreamStatus.rtmp_connected) {
                       _message = 'Connected';
                       _color = Colors.green;
@@ -148,16 +148,40 @@ class _CameraViewState extends State<CameraView> with AutomaticKeepAliveClientMi
             Positioned(
                 bottom: 0,
                 right: 0,
-                child: TextButton(
-                  child: Text('start', style: TextStyle(color: Colors.red),),
-                  onPressed: ()  => _startStream(),
-                )),
-            Positioned(
-                bottom: 0,
-                right: 100,
-                child: TextButton(
-                  child: Text('Stop', style: TextStyle(color: Colors.blue),),
-                  onPressed: () async => await _joyveeCamera.stopStream(),
+                child: StreamBuilder<StreamStatus>(
+                  initialData: StreamStatus.initial,
+                  stream: _joyveeCamera.eventStream,
+                  builder: (context, snapshot) {
+                    final StreamStatus streamStatus = snapshot.data ?? StreamStatus.initial;
+                    if (streamStatus == StreamStatus.rtmp_connected) {
+                      return TextButton(
+                        child: Text('Stop', style: TextStyle(color: Colors.blue),),
+                        onPressed: () async => await _joyveeCamera.stopStream(),
+                      );
+                    }
+                    if (streamStatus == StreamStatus.rtmp_connecting) {
+                      return TextButton(
+                        child: Text('Connecting', style: TextStyle(color: Colors.grey),),
+                        onPressed: null,
+                      );
+                    }
+                    if (streamStatus == StreamStatus.rtmp_disconnected) {
+                      return TextButton(
+                        child: Text('Retry', style: TextStyle(color: Colors.orange),),
+                        onPressed: ()  => _startStream(),
+                      );
+                    }
+                    if (streamStatus == StreamStatus.rtmp_connection_failed) {
+                      return TextButton(
+                        child: Text('Retry', style: TextStyle(color: Colors.blue),),
+                        onPressed: ()  => _startStream(),
+                      );
+                    }
+                    return TextButton(
+                      child: Text('start', style: TextStyle(color: Colors.red),),
+                      onPressed: ()  => _startStream(),
+                    );
+                  },
                 )),
           ]
       ),
