@@ -64,7 +64,7 @@ class _CameraViewState extends State<CameraView> {
   }
 
   void _startStream() async {
-    await _joyveeCamera.startStream("rtmp://192.168.1.103:1935/live/android");
+    await _joyveeCamera.startStream("rtmp://91.244.255.125:1935/live_redirect/533134efb9f93932bf58");
   }
 
 
