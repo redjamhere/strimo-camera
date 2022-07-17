@@ -35,23 +35,28 @@ class JoyveeCamera {
     await _channel.invokeMethod('callEvent');
   }
 
-  Future<bool?> _requestCameraPermission() async {
+  Future _requestCameraPermission() async {
     Map<Permission, PermissionStatus> statuses = await [
       Permission.camera,
       Permission.microphone,
     ].request();
     if (statuses[Permission.microphone] == PermissionStatus.granted && statuses[Permission.camera] == PermissionStatus.granted) {
-      return true;
-    } else if (statuses[Permission.microphone] == PermissionStatus.denied && statuses[Permission.camera] == PermissionStatus.denied) {
-      return false;
+      return;
+    } else if (statuses[Permission.microphone] == PermissionStatus.denied || statuses[Permission.camera] == PermissionStatus.denied) {
+      throw Exception("Camera is not allowed");
     } else if (statuses[Permission.microphone] == PermissionStatus.permanentlyDenied || statuses[Permission.camera] == PermissionStatus.permanentlyDenied) {
       await openAppSettings();
     }
   }
 
-  Future<dynamic> buildPreview (BuildContext context) async {
-    bool? permission = await _requestCameraPermission();
-    return permission! ? preview(context) : permission;
+  Future<Widget> buildPreview (BuildContext context) async {
+    try {
+      await _requestCameraPermission();
+      return preview(context);
+    } catch (e) {
+      throw Exception(e);
+    }
+
   }
 
   Future<void> switchCamera() async {
