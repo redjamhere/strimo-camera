@@ -30,25 +30,26 @@ class CameraView extends StatefulWidget {
 
 class _CameraViewState extends State<CameraView> {
   AppLifecycleState? _notification;
-  final JoyveeCamera _joyveeCamera = JoyveeCamera();
+  final JoyveeCameraController _cameraController = JoyveeCameraController();
   bool keepAlive = false;
   Size? size;
 
   bool? isStreaming;
-  bool? isEnabledFlashLight;
 
-  Widget? preview;
+  bool _isFlashLightEnabled = false;
 
   @override
   void initState() {
     super.initState();
+    _cameraController.isFlashLightEnabled.listen((event) {
+      setState(() {
+        _isFlashLightEnabled = event;
+      });
+    });
     isStreaming = false;
-    isEnabledFlashLight = false;
-    _buildPreview();
   }
   void _enableFlashLight() async {
-    isEnabledFlashLight =  await _joyveeCamera.enableFlashLight();
-    setState(() {});
+    await _cameraController.enableFlashLight();
   }
 
   @override
@@ -57,27 +58,22 @@ class _CameraViewState extends State<CameraView> {
   }
 
   void _disableFlashLight() async {
-    await _joyveeCamera.disableFlashLight();
-    setState(() {
-      isEnabledFlashLight = false;
-    });
+    await _cameraController.disableFlashLight();
   }
 
   void _startStream() async {
-    await _joyveeCamera.startStream("rtmp://91.244.255.125:1935/live_redirect/533134efb9f93932bf58");
+    await _cameraController.startStream("");
   }
 
-
-
-  _buildPreview() async {
-    dynamic p = await _joyveeCamera.buildPreview(context);
-    if(p == false) {
-      preview = Center(child: Text('Camera is not allowed'));
-    } else {
-      preview = p;
-    }
-    setState(() {});
-  }
+  // _buildPreview() async {
+  //   dynamic p = await _cameraController.buildPreview(context);
+  //   if(p == false) {
+  //     preview = Center(child: Text('Camera is not allowed'));
+  //   } else {
+  //     preview = p;
+  //   }
+  //   setState(() {});
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -87,10 +83,10 @@ class _CameraViewState extends State<CameraView> {
           children:[
             Positioned.fill(
               child: Center(
-                child: preview,
+                child: JoyveeCameraPreview(controller: _cameraController),
               )
             ),
-            (!isEnabledFlashLight!)
+            (!_isFlashLightEnabled)
             ? Positioned(
               top: 30,
               left: 0,
@@ -112,7 +108,7 @@ class _CameraViewState extends State<CameraView> {
               left: 50,
               child: IconButton(
                 icon: Icon(Icons.call),
-                onPressed: () async => await _joyveeCamera.callEvent(),
+                onPressed: () async => await _cameraController.callEvent(),
               ),
             ),
             Positioned(
@@ -123,7 +119,7 @@ class _CameraViewState extends State<CameraView> {
               child: Center(
                 child: StreamBuilder<StreamStatus>(
                   initialData: StreamStatus.initial,
-                  stream: _joyveeCamera.eventStream,
+                  stream: _cameraController.eventStream,
                   builder: (context, snapshot) {
                     final StreamStatus streamStatus = snapshot.data ?? StreamStatus.initial;
                     String _message = "> _ < ";
@@ -156,7 +152,7 @@ class _CameraViewState extends State<CameraView> {
               left: 0,
               child: TextButton(
                 child: Text('SwitchCamera'),
-                onPressed: () => _joyveeCamera.switchCamera(),
+                onPressed: () => _cameraController.switchCamera(),
               ),
             ),
             Positioned(
@@ -164,13 +160,13 @@ class _CameraViewState extends State<CameraView> {
                 right: 0,
                 child: StreamBuilder<StreamStatus>(
                   initialData: StreamStatus.initial,
-                  stream: _joyveeCamera.eventStream,
+                  stream: _cameraController.eventStream,
                   builder: (context, snapshot) {
                     final StreamStatus streamStatus = snapshot.data ?? StreamStatus.initial;
                     if (streamStatus == StreamStatus.rtmp_connected) {
                       return TextButton(
                         child: Text('Stop', style: TextStyle(color: Colors.blue),),
-                        onPressed: () async => await _joyveeCamera.stopStream(),
+                        onPressed: () async => await _cameraController.stopStream(),
                       );
                     }
                     if (streamStatus == StreamStatus.rtmp_connecting) {

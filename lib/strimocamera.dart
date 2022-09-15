@@ -17,23 +17,17 @@ enum StreamStatus {
   initial
 }
 
-class JoyveeCamera {
 
-  static const MethodChannel _channel = MethodChannel('strimocamera');
-  static const EventChannel _eventChannel = EventChannel("strimocamera_event_channel");
+class JoyveeCameraPreview extends StatefulWidget {
+  const JoyveeCameraPreview({Key? key, required this.controller}) : super(key: key);
 
-  /// Event for when network state changes to Wifi
-  static const connected  = 1;
+  final JoyveeCameraController controller;
 
-  /// Event for when network state changes to cellular/mobile data
-  static const disconnected = 0;
+  @override
+  State<JoyveeCameraPreview> createState() => _JoyveeCameraPreviewState();
+}
 
-  static const unknow = 2;
-
-
-  Future<void> callEvent() async {
-    await _channel.invokeMethod('callEvent');
-  }
+class _JoyveeCameraPreviewState extends State<JoyveeCameraPreview> {
 
   Future _requestCameraPermission() async {
     Map<Permission, PermissionStatus> statuses = await [
@@ -59,6 +53,42 @@ class JoyveeCamera {
 
   }
 
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder(
+      future: buildPreview(context),
+      builder: (BuildContext context, AsyncSnapshot<Widget> snapshot) {
+        if (snapshot.hasData) {
+          return snapshot.data!;
+        } else {
+          return const Center(
+            child: Text("Ошибка загрузки камеры"),
+          );
+        }
+      },
+    );
+  }
+}
+
+class JoyveeCameraController {
+
+  static const MethodChannel _channel = MethodChannel('strimocamera');
+  static const EventChannel _eventChannel = EventChannel("strimocamera_event_channel");
+
+  /// Event for when network state changes to Wifi
+  static const connected  = 1;
+
+  /// Event for when network state changes to cellular/mobile data
+  static const disconnected = 0;
+
+  static const unknow = 2;
+
+  final _isFlashLightEnabled = StreamController<bool>();
+
+  Future<void> callEvent() async {
+    await _channel.invokeMethod('callEvent');
+  }
+
   Future<void> switchCamera() async {
     await _channel.invokeMethod('switchCamera');
   }
@@ -68,15 +98,20 @@ class JoyveeCamera {
   }
 
   Future<bool> stopStream() async {
-   return  await _channel.invokeMethod('stopStream');
+    return  await _channel.invokeMethod('stopStream');
   }
 
-  Future<bool> enableFlashLight() async {
-    return await _channel.invokeMethod('enableFlashLight');
+  Future<void> enableFlashLight() async {
+    _isFlashLightEnabled.add(await _channel.invokeMethod('enableFlashLight'));
   }
 
-  Future<bool> disableFlashLight() async {
-    return await _channel.invokeMethod('disableFlashLight');
+  Future<void> disableFlashLight() async {
+    _isFlashLightEnabled.add(await _channel.invokeMethod('disableFlashLight'));
+  }
+
+  Stream<bool> get isFlashLightEnabled async* {
+    yield false;
+    yield* _isFlashLightEnabled.stream;
   }
 
   Stream<StreamStatus> get eventStream async* {
@@ -84,7 +119,6 @@ class JoyveeCamera {
       yield strToStreamStatus(message);
     }
   }
-
 }
 
 StreamStatus strToStreamStatus(String s) {
@@ -107,4 +141,5 @@ StreamStatus strToStreamStatus(String s) {
       break;
   }
   return _status;
+
 }
